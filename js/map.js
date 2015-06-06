@@ -1,7 +1,6 @@
 /*
-file: map.js
-location: /var/www/html/js/map.js
-desc: javascript and jquery for map.php
+file: /js/map.js
+desc: javascript and jquery for index.html
 */
 
 var centreLat=0.0;

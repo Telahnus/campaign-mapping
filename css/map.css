@@ -1,0 +1,11 @@
+/*
+	file: css/map.css
+	desc: css for index.html
+*/
+
+#overmap{
+    position: absolute;
+    left: 20px;
+    top: 200px;
+    z-index: 1;
+}
