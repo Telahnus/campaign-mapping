@@ -1,7 +1,6 @@
- <?xml version="1.0" encoding="UTF-8"?>
 <root>
-<marker>
-	<position>11,22</position>
-	<content>This was a triumph</content>
-</marker>
+	<marker>
+		<position>11,22</position>
+		<content>This was a triumph</content>
+	</marker>
 </root>

@@ -167,3 +167,35 @@ function switchEditing(){
         $("#edit_btn").val("Edit (off)");
     }
 }
+
+function xmlTest(){
+    /*xmlhttp=new XMLHttpRequest();
+    xmlhttp.open("GET","map.xml",false);
+    xmlhttp.send();
+    xmlDoc=xmlhttp.responseXML; 
+    var text = xmlDoc.getElementsByTagName("content").childNodes[0].nodeValue;
+    alert(text);*/
+
+    xmlDoc=loadXMLDoc("map.xml");
+    root=xmlDoc.getElementsByTagName("root")[0];
+        marker=xmlDoc.createElement("marker");
+            pos=xmlDoc.createElement("position");
+            cont=xmlDoc.createElement("content");
+                text1=xmlDoc.createTextNode("222,222");
+                text2=xmlDoc.createTextNode("This is the second content");
+                cont.appendChild(text2);
+                pos.appendChild(text1);
+            marker.appendChild(cont);
+            marker.appendChild(pos);
+        root.appendChild(marker);
+
+    var text = xmlDoc.getElementsByTagName("content")[1].childNodes[0].nodeValue;
+    alert(text);
+}
+
+function loadXMLDoc(filename){
+    xhttp=new XMLHttpRequest();
+    xhttp.open("GET",filename,false);
+    xhttp.send();
+    return xhttp.responseXML;
+} 
