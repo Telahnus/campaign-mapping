@@ -1,6 +1,6 @@
 /*
 file: /js/map.js
-desc: javascript and jquery for index.html
+desc: javascript and jquery for map.php
 */
 
 var centreLat=0.0;
@@ -11,6 +11,8 @@ var imageWraps=false; //SET THIS TO false TO PREVENT THE IMAGE WRAPPING AROUND
 var map; //the GMap3 itself
 var gmicMapType;
 var editing = false;
+var markers = [];
+var windows = [];
 
 function GMICMapType() {
     this.Cache = Array();
@@ -98,14 +100,18 @@ function resizeMapDiv() {
     }
 }
 
-function load() {
+   
+//############### Google Map Initialize ##############
+function map_initialize()
+{
     resizeMapDiv();
-    var latlng = new google.maps.LatLng(centreLat, centreLon);
-    var myOptions = {
+    var mapCenter = new google.maps.LatLng(centreLat, centreLon);
+    var googleMapOptions =
+    {
         zoom: initialZoom,
         minZoom: 2,
         maxZoom: 5,
-        center: latlng,
+        center: mapCenter,
         panControl: true,
         zoomControl: true,
         mapTypeControl: true,
@@ -114,88 +120,131 @@ function load() {
         overviewMapControl: true,
         mapTypeControlOptions: { mapTypeIds: ["ImageCutter"] },
         mapTypeId: "ImageCutter"
-    }
-    map = new google.maps.Map(document.getElementById("map"), myOptions);
+    };
+
+    map = new google.maps.Map(document.getElementById("map"), googleMapOptions);        
     gmicMapType = new GMICMapType();
     map.mapTypes.set("ImageCutter",gmicMapType);
-
+   
+    //drop a new marker on right click
     google.maps.event.addListener(map, 'rightclick', function(event) {
-        if (editing==true)
-            placeMarker(event.latLng);
+        addMarker(event.latLng);
     });
+                      
 }
 
-function placeMarker(location) {
+//############### Create Marker Function ##############
+// Add a marker to the map and push to the array.
+function addMarker(location) {
     var marker = new google.maps.Marker({
-        position: location, 
+        position: location,
+        draggable: true,
+        animation: google.maps.Animation.DROP,
         map: map
     });
-    //Content structure of info Window for the Markers
-    var contentString = $(
-        '<div class="marker-info-win">'+
-        '<div class="marker-inner-win">'+
-        '<span class="info-content">'+
-        '<h1 class="marker-heading">New Marker</h1>'+
-        'This is a new marker infoWindow'+
-        '</span><br>'+
-        '<button name="remove-marker" class="remove-marker" title="Remove Marker">Remove Marker</button>'+
-        '</div></div>'
-    );
-       
-    //Create an infoWindow
+    var texter = "mwahahaha";
+    var contentString = $("<form>"+
+        "<input type='text' name='title' class='title' placeholder='title'><br>"+
+        "<input type='text' name='link' class='link' placeholder='link'><br>"+
+        "<textarea name='desc' class='desc' placeholder='desc'></textarea><br>"+
+        "<button type='button' name='save' class='save'>Save</button>"+
+        "<button type='button' name='edit' class='edit'>Edit</button>"+
+        "<button type='button' name='delete' class='delete'>Delete</button>"+
+        "</form>");
+
+    var save_btn = contentString.find('button.save')[0];
+    var edit_btn = contentString.find('button.edit')[0];
+    var del_btn = contentString.find('button.delete')[0];
+/*    var title = contentString.find('input.title')[0].value;
+    var link = contentString.find('input.link')[0].value;
+    var desc = contentString.find('textarea.desc')[0].value;
+    var pos = marker.position;
+    var data = title+","+link+","+desc+","+pos;*/
+    //$(edit_btn).hide();
+
+    google.maps.event.addDomListener(save_btn, "click", function(event) {
+        saveMarker(marker);
+    });
+    google.maps.event.addDomListener(edit_btn, "click", function(event) {
+        var title = contentString.find('input.title')[0].value;
+        var link = contentString.find('input.link')[0].value;
+        var desc = contentString.find('textarea.desc')[0].value;
+        var pos = marker.position;
+        var data = title+","+link+","+desc+","+pos;
+        test(data);
+    });
+    google.maps.event.addDomListener(del_btn, "click", function(event) {
+        deleteMarker(marker);
+    });
+
     var infowindow = new google.maps.InfoWindow();
-    //set the content of infoWindow
     infowindow.setContent(contentString[0]);
-    //add click event listener to marker which will open infoWindow          
+
+    windows.push(infowindow);
+    markers.push(marker);
+
     google.maps.event.addListener(marker, 'click', function() {
-        infowindow.open(map,marker); // click on marker opens info window
-    });
-    var removeBtn = contentString.find('button.remove-marker')[0];
-    google.maps.event.addDomListener(removeBtn, "click", function(event) {
-        if (editing)
-            marker.setMap(null);
+        infowindow.open(map,marker);
     });
 
 }
 
-function switchEditing(){
-    if (editing==false){
-        editing = true;
-        $("#edit_btn").val("Edit (on)");
-    }else{
-        editing = false;
-        $("#edit_btn").val("Edit (off)");
-    }
+// Sets the map on all markers in the array.
+function setAllMap(map) {
+  for (var i = 0; i < markers.length; i++) {
+    markers[i].setMap(map);
+  }
 }
 
-function xmlTest(){
-    /*xmlhttp=new XMLHttpRequest();
-    xmlhttp.open("GET","map.xml",false);
-    xmlhttp.send();
-    xmlDoc=xmlhttp.responseXML; 
-    var text = xmlDoc.getElementsByTagName("content").childNodes[0].nodeValue;
-    alert(text);*/
-
-    xmlDoc=loadXMLDoc("map.xml");
-    root=xmlDoc.getElementsByTagName("root")[0];
-        marker=xmlDoc.createElement("marker");
-            pos=xmlDoc.createElement("position");
-            cont=xmlDoc.createElement("content");
-                text1=xmlDoc.createTextNode("222,222");
-                text2=xmlDoc.createTextNode("This is the second content");
-                cont.appendChild(text2);
-                pos.appendChild(text1);
-            marker.appendChild(cont);
-            marker.appendChild(pos);
-        root.appendChild(marker);
-
-    var text = xmlDoc.getElementsByTagName("content")[1].childNodes[0].nodeValue;
-    alert(text);
+// Removes the markers from the map, but keeps them in the array.
+function clearMarkers() {
+  setAllMap(null);
 }
 
-function loadXMLDoc(filename){
-    xhttp=new XMLHttpRequest();
-    xhttp.open("GET",filename,false);
-    xhttp.send();
-    return xhttp.responseXML;
-} 
+// Deletes all markers in the array by removing references to them.
+function deleteMarkers() {
+  clearMarkers();
+  markers = [];
+}
+
+function deleteMarker(marker){
+    marker.setMap(null);
+}
+
+function saveMarker(marker){
+    alert(marker.position);
+}
+
+function test(param){
+
+    $.ajax({
+        type : "POST",
+        url : "test.php",
+        data : param,
+        success: function(data){
+            alert(data);
+        },
+        error: function( status, errorThrown ) {
+            alert( "Sorry, there was a problem!" );
+            console.log( "Error: " + errorThrown );
+            console.log( "Status: " + status );
+        },
+    });
+
+/*    $.ajax({
+        url: "test.php", 
+        //data: JSON.stringify(param),
+        //type: "POST",
+        error: function( status, errorThrown ) {
+            alert( "Sorry, there was a problem!" );
+            console.log( "Error: " + errorThrown );
+            console.log( "Status: " + status );
+        },
+        success: function(result){
+            alert( "The request is complete!" );
+        }
+    });*/
+
+    //alert(param);
+
+}
